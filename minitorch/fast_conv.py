@@ -5,6 +5,7 @@ from .autodiff import Context
 from .tensor import Tensor
 from .tensor_data import Shape, Strides, broadcast_index, index_to_position, to_index
 from .tensor_functions import Function
+from .tensor_ops import TensorBackend
 
 to_index = njit(inline="always")(to_index)
 index_to_position = njit(inline="always")(index_to_position)
@@ -105,7 +106,11 @@ class Conv1dFun(Function):
         ctx.save_for_backward(input, weight)
         batch, in_channels, width = input.shape
         out_channels, _, k_width = weight.shape
-        out = Tensor.zeros((batch, out_channels, width))
+        out = Tensor.make(
+            Tensor.zeros((batch, out_channels, width)),
+            (batch, out_channels, width),
+            backend=input.backend
+        )
         tensor_conv1d(
             out._tensor,
             out.shape,
@@ -219,7 +224,11 @@ class Conv2dFun(Function):
         ctx.save_for_backward(input, weight)
         batch, in_channels, height, width = input.shape
         out_channels, _, k_height, k_width = weight.shape
-        out = Tensor.zeros((batch, out_channels, height, width))
+        out = Tensor.make(
+            Tensor.zeros((batch, out_channels, height, width)),
+            (batch, out_channels, height, width),
+            backend=input.backend
+        )
         tensor_conv2d(
             out._tensor,
             out.shape,
