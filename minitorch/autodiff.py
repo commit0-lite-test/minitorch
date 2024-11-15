@@ -32,14 +32,22 @@ variable_count = 1
 
 
 class Variable(Protocol):
-    def is_constant(self) -> bool: ...
+    def is_constant(self) -> bool:
+        """Check if the variable is constant."""
+        ...
 
-    def is_leaf(self) -> bool: ...
+    def is_leaf(self) -> bool:
+        """Check if the variable is a leaf node."""
+        ...
 
-    def accumulate_derivative(self, deriv: Any) -> None: ...
+    def accumulate_derivative(self, deriv: Any) -> None:
+        """Accumulate the derivative for this variable."""
+        ...
 
     @property
-    def history(self) -> Any: ...
+    def history(self) -> Any:
+        """Get the computation history of this variable."""
+        ...
 
 
 def topological_sort(variable: Variable) -> Iterable[Variable]:
