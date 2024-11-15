@@ -1,5 +1,5 @@
 from typing import Callable, Generic, Iterable, Tuple, TypeVar
-import minitorch.operators as operators
+from . import operators
 
 A = TypeVar("A")
 
