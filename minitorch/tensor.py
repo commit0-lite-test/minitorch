@@ -1,38 +1,55 @@
-"""
-Implementation of the core Tensor object for autodifferentiation.
-"""
+"""Implementation of the core Tensor object for autodifferentiation."""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 import numpy as np
-from . import operators
-from .autodiff import Context, Variable, backpropagate
+from .autodiff import Context
 from .tensor_data import TensorData
-from .tensor_functions import EQ, LT, Add, All, Copy, Exp, Inv, IsClose, Log, MatMul, Mul, Neg, Permute, ReLU, Sigmoid, Sum, View, tensor
+from .tensor_functions import (
+    EQ,
+    LT,
+    Add,
+    Copy,
+    Inv,
+    MatMul,
+    Mul,
+    Neg,
+    Permute,
+    Sum,
+    View,
+    tensor,
+)
+
 if TYPE_CHECKING:
-    from typing import Any, Iterable, List, Optional, Sequence, Tuple, Type, Union
+    from typing import Any, List, Optional, Sequence, Type, Union
     import numpy.typing as npt
-    from .tensor_data import Shape, Storage, Strides, UserIndex, UserShape, UserStrides
+    from .tensor_data import Storage, UserIndex, UserShape, UserStrides
     from .tensor_functions import Function
     from .tensor_ops import TensorBackend
-    TensorLike = Union[float, int, 'Tensor']
+
+    TensorLike = Union[float, int, "Tensor"]
+
 
 @dataclass
 class History:
-    """
-    `History` stores the history of `Function` operations that was
+    """`History` stores the history of `Function` operations that was
     used to construct the current Variable.
     """
+
     last_fn: Optional[Type[Function]] = None
     ctx: Optional[Context] = None
     inputs: Sequence[Tensor] = ()
+
+
 _tensor_count = 0
 
+
 class Tensor:
-    """
-    Tensor is a generalization of Scalar in that it is a Variable that
+    """Tensor is a generalization of Scalar in that it is a Variable that
     handles multidimensional arrays.
     """
+
     backend: TensorBackend
     history: Optional[History]
     grad: Optional[Tensor]
@@ -40,7 +57,13 @@ class Tensor:
     unique_id: int
     name: str
 
-    def __init__(self, v: TensorData, back: Optional[History]=None, name: Optional[str]=None, backend: Optional[TensorBackend]=None):
+    def __init__(
+        self,
+        v: TensorData,
+        back: Optional[History] = None,
+        name: Optional[str] = None,
+        backend: Optional[TensorBackend] = None,
+    ):
         global _tensor_count
         _tensor_count += 1
         self.unique_id = _tensor_count
@@ -57,33 +80,33 @@ class Tensor:
         self.f = backend
 
     def to_numpy(self) -> npt.NDArray[np.float64]:
-        """
-        Returns:
-             Converted to numpy array
+        """Returns
+        Converted to numpy array
+
         """
         return self._tensor.to_numpy()
 
     @property
     def shape(self) -> UserShape:
-        """
-        Returns:
-             shape of the tensor
+        """Returns
+        shape of the tensor
+
         """
         return self._tensor.shape
 
     @property
     def size(self) -> int:
-        """
-        Returns:
-             int : size of the tensor
+        """Returns
+        int : size of the tensor
+
         """
         return self._tensor.size
 
     @property
     def dims(self) -> int:
-        """
-        Returns:
-             int : dimensionality of the tensor
+        """Returns
+        int : dimensionality of the tensor
+
         """
         return len(self._tensor.shape)
 
@@ -133,11 +156,11 @@ class Tensor:
     def __rmul__(self, b: TensorLike) -> Tensor:
         return self * b
 
-    def sum(self, dim: Optional[int]=None) -> Tensor:
+    def sum(self, dim: Optional[int] = None) -> Tensor:
         """Compute the sum over dimension `dim`"""
         return Sum.apply(self, dim)
 
-    def mean(self, dim: Optional[int]=None) -> Tensor:
+    def mean(self, dim: Optional[int] = None) -> Tensor:
         """Compute the mean over dimension `dim`"""
         sum_tensor = self.sum(dim)
         if dim is None:
@@ -169,44 +192,51 @@ class Tensor:
         self._tensor.set(key2, val)
 
     @staticmethod
-    def make(storage: Union[Storage, List[float]], shape: UserShape, strides: Optional[UserStrides]=None, backend: Optional[TensorBackend]=None) -> Tensor:
+    def make(
+        storage: Union[Storage, List[float]],
+        shape: UserShape,
+        strides: Optional[UserStrides] = None,
+        backend: Optional[TensorBackend] = None,
+    ) -> Tensor:
         """Create a new tensor from data"""
         tensor_data = TensorData(storage, shape, strides)
         return Tensor(tensor_data, backend=backend)
 
     def expand(self, other: Tensor) -> Tensor:
-        """
-        Method used to allow for backprop over broadcasting.
+        """Method used to allow for backprop over broadcasting.
         This method is called when the output of `backward`
         is a different size than the input of `forward`.
 
 
-        Parameters:
+        Parameters
+        ----------
             other : backward tensor (must broadcast with self)
 
-        Returns:
+        Returns
+        -------
             Expanded version of `other` with the right derivatives
 
         """
         if self.shape == other.shape:
             return other
-        
+
         expanded_shape = [max(s, o) for s, o in zip(self.shape, other.shape)]
         expanded = other.zeros(tuple(expanded_shape))
-        
+
         for i in range(len(expanded_shape)):
             if self.shape[i] == 1 and other.shape[i] > 1:
                 expanded = expanded.sum(i)
-        
+
         return expanded
 
     def accumulate_derivative(self, x: Any) -> None:
-        """
-        Add `val` to the the derivative accumulated on this variable.
+        """Add `val` to the the derivative accumulated on this variable.
         Should only be called during autodifferentiation on leaf variables.
 
         Args:
+        ----
             x : value to be accumulated
+
         """
         if self.is_leaf():
             if self.grad is None:
@@ -221,7 +251,5 @@ class Tensor:
         return self.history is None or self.history.last_fn is None
 
     def zero_grad_(self) -> None:
-        """
-        Reset the derivative on this variable.
-        """
+        """Reset the derivative on this variable."""
         self.grad = None
