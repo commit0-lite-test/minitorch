@@ -313,8 +313,7 @@ def rand(
 
     vals = [random.random() for _ in range(int(prod(shape)))]
     tensor = Tensor.make(vals, shape, backend=backend)
-    if requires_grad:
-        tensor.requires_grad = True
+    tensor.requires_grad = requires_grad
     return tensor
 
 
