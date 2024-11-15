@@ -32,7 +32,18 @@ variable_count = 1
 
 
 class Variable(Protocol):
-    pass
+    def is_constant(self) -> bool:
+        ...
+
+    def is_leaf(self) -> bool:
+        ...
+
+    def accumulate_derivative(self, deriv: Any) -> None:
+        ...
+
+    @property
+    def history(self) -> Any:
+        ...
 
 
 def topological_sort(variable: Variable) -> Iterable[Variable]:
@@ -50,7 +61,7 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     visited = set()
     result = []
 
-    def dfs(var):
+    def dfs(var: Variable) -> None:
         if var not in visited and not var.is_constant():
             visited.add(var)
             if hasattr(var, "history") and var.history is not None:
