@@ -93,6 +93,18 @@ class Module:
         return None
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Call self as a function.
+
+        This method allows the object to be called like a function. It delegates to the `forward` method.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Any: The result of calling the `forward` method.
+        """
         return self.forward(*args, **kwargs)
 
     def __repr__(self) -> str:
