@@ -7,7 +7,7 @@ from .tensor_ops import MapProto, TensorOps
 
 if TYPE_CHECKING:
     from .tensor import Tensor
-    from .tensor_data import Shape, Storage, Strides
+    from .tensor_data import Shape, Storage, Strides, UserShape
 to_index = njit(inline="always")(to_index)
 index_to_position = njit(inline="always")(index_to_position)
 broadcast_index = njit(inline="always")(broadcast_index)
@@ -22,12 +22,12 @@ class FastOps(TensorOps):
             if out is None:
                 out = a.zeros(a.shape)
             tensor_map(fn)(
-                a.storage(),
+                a.storage,
                 a.shape,
-                a.strides(),
-                out.storage(),
+                a.strides,
+                out.storage,
                 out.shape,
-                out.strides(),
+                out.strides,
             )
             return out
 
@@ -41,15 +41,15 @@ class FastOps(TensorOps):
             out_shape = shape_broadcast(a.shape, b.shape)
             out = a.zeros(out_shape)
             tensor_zip(fn)(
-                a.storage(),
+                a.storage,
                 a.shape,
-                a.strides(),
-                b.storage(),
+                a.strides,
+                b.storage,
                 b.shape,
-                b.strides(),
-                out.storage(),
+                b.strides,
+                out.storage,
                 out.shape,
-                out.strides(),
+                out.strides,
             )
             return out
 
@@ -66,12 +66,12 @@ class FastOps(TensorOps):
             out_shape[dim] = 1
             out = a.zeros(tuple(out_shape))
             tensor_reduce(fn)(
-                out.storage(),
+                out.storage,
                 out.shape,
-                out.strides(),
-                a.storage(),
+                out.strides,
+                a.storage,
                 a.shape,
-                a.strides(),
+                a.strides,
                 dim,
             )
             return out
@@ -116,15 +116,15 @@ class FastOps(TensorOps):
 
         # Perform matrix multiplication
         tensor_matrix_multiply(
-            out.storage(),
+            out.storage,
             out.shape,
-            out.strides(),
-            a.storage(),
+            out.strides,
+            a.storage,
             a.shape,
-            a.strides(),
-            b.storage(),
+            a.strides,
+            b.storage,
             b.shape,
-            b.strides(),
+            b.strides,
         )
 
         return out
