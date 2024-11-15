@@ -7,7 +7,7 @@ from .tensor_ops import MapProto, TensorOps
 
 if TYPE_CHECKING:
     from .tensor import Tensor
-    from .tensor_data import Shape, Storage, Strides, UserShape
+    from .tensor_data import Shape, Storage, Strides
 to_index = njit(inline="always")(to_index)
 index_to_position = njit(inline="always")(index_to_position)
 broadcast_index = njit(inline="always")(broadcast_index)
