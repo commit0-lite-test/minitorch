@@ -76,7 +76,7 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
     Args:
     ----
         variable: The right-most variable
-        deriv: Its derivative that we want to propagate backward to the leaves.
+        deriv: The derivative of the variable that we want to propagate backward to the leaves.
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
 
