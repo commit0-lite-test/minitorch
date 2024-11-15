@@ -1,12 +1,11 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Optional
 import numpy as np
 from numba import njit, prange
 from .tensor_data import broadcast_index, index_to_position, shape_broadcast, to_index
 from .tensor_ops import MapProto, TensorOps
 
 if TYPE_CHECKING:
-    from typing import Callable, Optional
     from .tensor import Tensor
     from .tensor_data import Shape, Storage, Strides
 to_index = njit(inline="always")(to_index)
@@ -23,12 +22,12 @@ class FastOps(TensorOps):
             if out is None:
                 out = a.zeros(a.shape)
             tensor_map(fn)(
-                a._tensor._storage,
-                a._tensor._shape,
-                a._tensor._strides,
-                out._tensor._storage,
-                out._tensor._shape,
-                out._tensor._strides,
+                a.storage,
+                a.shape,
+                a.strides,
+                out.storage,
+                out.shape,
+                out.strides,
             )
             return out
 
@@ -42,15 +41,15 @@ class FastOps(TensorOps):
             out_shape = shape_broadcast(a.shape, b.shape)
             out = a.zeros(out_shape)
             tensor_zip(fn)(
-                a._tensor._storage,
-                a._tensor._shape,
-                a._tensor._strides,
-                b._tensor._storage,
-                b._tensor._shape,
-                b._tensor._strides,
-                out._tensor._storage,
-                out._tensor._shape,
-                out._tensor._strides,
+                a.storage,
+                a.shape,
+                a.strides,
+                b.storage,
+                b.shape,
+                b.strides,
+                out.storage,
+                out.shape,
+                out.strides,
             )
             return out
 
@@ -67,12 +66,12 @@ class FastOps(TensorOps):
             out_shape[dim] = 1
             out = a.zeros(tuple(out_shape))
             tensor_reduce(fn)(
-                out._tensor._storage,
-                out._tensor._shape,
-                out._tensor._strides,
-                a._tensor._storage,
-                a._tensor._shape,
-                a._tensor._strides,
+                out.storage,
+                out.shape,
+                out.strides,
+                a.storage,
+                a.shape,
+                a.strides,
                 dim,
             )
             return out
@@ -117,15 +116,15 @@ class FastOps(TensorOps):
 
         # Perform matrix multiplication
         tensor_matrix_multiply(
-            out._tensor._storage,
-            out._tensor._shape,
-            out._tensor._strides,
-            a._tensor._storage,
-            a._tensor._shape,
-            a._tensor._strides,
-            b._tensor._storage,
-            b._tensor._shape,
-            b._tensor._strides,
+            out.storage,
+            out.shape,
+            out.strides,
+            a.storage,
+            a.shape,
+            a.strides,
+            b.storage,
+            b.shape,
+            b.strides,
         )
 
         return out
