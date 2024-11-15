@@ -84,9 +84,9 @@ class MathTest(Generic[A]):
     def _tests(
         cls,
     ) -> Tuple[
-        Tuple[str, Callable[[A], A]],
-        Tuple[str, Callable[[A, A], A]],
-        Tuple[str, Callable[[Iterable[A]], A]],
+        list[Tuple[str, Callable[[A], A]]],
+        list[Tuple[str, Callable[[A, A], A]]],
+        list[Tuple[str, Callable[[Iterable[A]], A]]],
     ]:
         """Returns a list of all the math tests."""
         one_arg = [
