@@ -5,7 +5,6 @@ from .autodiff import Context
 from .tensor import Tensor
 from .tensor_data import Shape, Strides, broadcast_index, index_to_position, to_index
 from .tensor_functions import Function
-from .tensor_ops import TensorBackend
 
 to_index = njit(inline="always")(to_index)
 index_to_position = njit(inline="always")(index_to_position)
