@@ -21,14 +21,17 @@ def wrap_tuple(x: Any) -> Tuple[Any, ...]:
 class Function:
     @staticmethod
     def forward(ctx: Context, *args: Tensor) -> Tensor:
+        """Forward pass of the function."""
         raise NotImplementedError("Forward not implemented")
 
     @staticmethod
     def backward(ctx: Context, d_output: Tensor) -> Tuple[Tensor, ...]:
+        """Backward pass of the function."""
         raise NotImplementedError("Backward not implemented")
 
     @classmethod
     def apply(cls, *args: Any) -> Tensor:
+        """Apply the function to the given arguments."""
         ctx = Context()
         result = cls.forward(ctx, *args)
         if any(arg.history is not None for arg in args):
@@ -212,17 +215,19 @@ class IsClose(Function):
 class Permute(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, order: Tuple[int]) -> Tensor:
+        """Forward pass of the Permute function."""
         ctx.save_for_backward(order)
-        return Tensor.make(a._tensor.permute(*order), backend=a.backend)
+        return Tensor.make(a._tensor.permute(*order), shape=a.shape, backend=a.backend)
 
     @staticmethod
     def backward(ctx: Context, d_output: Tensor) -> Tuple[Tensor, float]:
+        """Backward pass of the Permute function."""
         order = ctx.saved_values[0]
         inv_order = [0] * len(order)
         for i, j in enumerate(order):
             inv_order[j] = i
         return (
-            Tensor.make(d_output._tensor.permute(*inv_order), backend=d_output.backend),
+            Tensor.make(d_output._tensor.permute(*inv_order), shape=d_output.shape, backend=d_output.backend),
             0.0,
         )
 
@@ -334,7 +339,7 @@ def _tensor(
 
     """
     tensor = Tensor.make(ls, shape, backend=backend)
-    tensor.requires_grad_(requires_grad)
+    tensor.requires_grad = requires_grad
     return tensor
 
 
@@ -360,6 +365,6 @@ def tensor(
         return _tensor([ls], (1,), backend=backend, requires_grad=requires_grad)
     if isinstance(ls, list):
         tensor = _tensor(ls, (len(ls),), backend=backend)
-        tensor.requires_grad_(requires_grad)
+        tensor.requires_grad = requires_grad
         return tensor
     raise NotImplementedError("Couldn't create tensor from %s" % (ls,))
