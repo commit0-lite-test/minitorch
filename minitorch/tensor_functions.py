@@ -1,24 +1,23 @@
-"""
-Implementation of the autodifferentiation Functions for Tensor.
-"""
+"""Implementation of the autodifferentiation Functions for Tensor."""
+
 from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
-import numpy as np
-import minitorch
-from . import operators
 from .autodiff import Context
 from .tensor_ops import SimpleBackend, TensorBackend
+
 if TYPE_CHECKING:
-    from typing import Any, List, Tuple
+    from typing import Any, Tuple
     from .tensor import Tensor
-    from .tensor_data import UserIndex, UserShape
+    from .tensor_data import UserShape
+
 
 def wrap_tuple(x):
     """Turn a possible value into a tuple"""
     if isinstance(x, tuple):
         return x
     return (x,)
+
 
 class Function:
     @staticmethod
@@ -37,6 +36,7 @@ class Function:
             result.history = History(cls, ctx, args)
         return result
 
+
 class Neg(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
@@ -45,6 +45,7 @@ class Neg(Function):
     @staticmethod
     def backward(ctx: Context, d_output: Tensor) -> Tuple[Tensor]:
         return (d_output.f.neg_map(d_output),)
+
 
 class Inv(Function):
     @staticmethod
@@ -57,6 +58,7 @@ class Inv(Function):
         t1 = ctx.saved_values[0]
         return (d_output.f.inv_back_zip(t1, d_output),)
 
+
 class Add(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor, t2: Tensor) -> Tensor:
@@ -65,6 +67,7 @@ class Add(Function):
     @staticmethod
     def backward(ctx: Context, d_output: Tensor) -> Tuple[Tensor, Tensor]:
         return (d_output, d_output)
+
 
 class Mul(Function):
     @staticmethod
@@ -77,6 +80,7 @@ class Mul(Function):
         t1, t2 = ctx.saved_values
         return (t1.f.mul_zip(d_output, t2), t1.f.mul_zip(d_output, t1))
 
+
 class Sigmoid(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
@@ -87,7 +91,16 @@ class Sigmoid(Function):
     @staticmethod
     def backward(ctx: Context, d_output: Tensor) -> Tuple[Tensor]:
         sigmoid_out = ctx.saved_values[0]
-        return (d_output.f.mul_zip(sigmoid_out, sigmoid_out.f.add_zip(tensor([1.0], backend=d_output.backend), sigmoid_out.f.neg_map(sigmoid_out))),)
+        return (
+            d_output.f.mul_zip(
+                sigmoid_out,
+                sigmoid_out.f.add_zip(
+                    tensor([1.0], backend=d_output.backend),
+                    sigmoid_out.f.neg_map(sigmoid_out),
+                ),
+            ),
+        )
+
 
 class ReLU(Function):
     @staticmethod
@@ -100,6 +113,7 @@ class ReLU(Function):
         t1 = ctx.saved_values[0]
         return (d_output.f.relu_back_zip(t1, d_output),)
 
+
 class Log(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
@@ -110,6 +124,7 @@ class Log(Function):
     def backward(ctx: Context, d_output: Tensor) -> Tuple[Tensor]:
         t1 = ctx.saved_values[0]
         return (d_output.f.log_back_zip(t1, d_output),)
+
 
 class Exp(Function):
     @staticmethod
@@ -122,6 +137,7 @@ class Exp(Function):
     def backward(ctx: Context, d_output: Tensor) -> Tuple[Tensor]:
         exp_out = ctx.saved_values[0]
         return (d_output.f.mul_zip(d_output, exp_out),)
+
 
 class Sum(Function):
     @staticmethod
@@ -137,17 +153,24 @@ class Sum(Function):
         else:
             return (d_output.expand(original_shape), 0.0)
 
+
 class All(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Optional[int] = None) -> Tensor:
         if dim is not None:
-            return a.permute(*[i for i in range(a.dims) if i != dim] + [dim]).contiguous().view(int(prod(a.shape) / a.shape[dim]), a.shape[dim]).f.mul_reduce(a)
+            return (
+                a.permute(*[i for i in range(a.dims) if i != dim] + [dim])
+                .contiguous()
+                .view(int(prod(a.shape) / a.shape[dim]), a.shape[dim])
+                .f.mul_reduce(a)
+            )
         else:
             return a.f.mul_reduce(a.contiguous().view(a.size))
 
     @staticmethod
     def backward(ctx: Context, d_output: Tensor) -> Tuple[Tensor, float]:
         raise NotImplementedError("Backward not implemented for All")
+
 
 class LT(Function):
     @staticmethod
@@ -160,6 +183,7 @@ class LT(Function):
         a_shape, b_shape = ctx.saved_values
         return (zeros(a_shape), zeros(b_shape))
 
+
 class EQ(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, b: Tensor) -> Tensor:
@@ -171,6 +195,7 @@ class EQ(Function):
         a_shape, b_shape = ctx.saved_values
         return (zeros(a_shape), zeros(b_shape))
 
+
 class IsClose(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, b: Tensor) -> Tensor:
@@ -179,6 +204,7 @@ class IsClose(Function):
     @staticmethod
     def backward(ctx: Context, d_output: Tensor) -> Tuple[Tensor, Tensor]:
         return (zeros(d_output.shape), zeros(d_output.shape))
+
 
 class Permute(Function):
     @staticmethod
@@ -192,7 +218,11 @@ class Permute(Function):
         inv_order = [0] * len(order)
         for i, j in enumerate(order):
             inv_order[j] = i
-        return (Tensor.make(d_output._tensor.permute(*inv_order), backend=d_output.backend), 0.0)
+        return (
+            Tensor.make(d_output._tensor.permute(*inv_order), backend=d_output.backend),
+            0.0,
+        )
+
 
 class View(Function):
     @staticmethod
@@ -204,7 +234,11 @@ class View(Function):
     @staticmethod
     def backward(ctx: Context, d_output: Tensor) -> Tuple[Tensor, float]:
         original = ctx.saved_values[0]
-        return (Tensor.make(d_output._tensor._storage, original, backend=d_output.backend), 0.0)
+        return (
+            Tensor.make(d_output._tensor._storage, original, backend=d_output.backend),
+            0.0,
+        )
+
 
 class Copy(Function):
     @staticmethod
@@ -214,6 +248,7 @@ class Copy(Function):
     @staticmethod
     def backward(ctx: Context, d_output: Tensor) -> Tuple[Tensor]:
         return (d_output,)
+
 
 class MatMul(Function):
     @staticmethod
@@ -226,67 +261,90 @@ class MatMul(Function):
         t1, t2 = ctx.saved_values
         return (
             d_output.f.matrix_multiply(d_output, t2.permute(1, 0)),
-            d_output.f.matrix_multiply(t1.permute(1, 0), d_output)
+            d_output.f.matrix_multiply(t1.permute(1, 0), d_output),
         )
 
-def zeros(shape: UserShape, backend: TensorBackend=SimpleBackend) -> Tensor:
-    """
-    Produce a zero tensor of size `shape`.
+
+def zeros(shape: UserShape, backend: TensorBackend = SimpleBackend) -> Tensor:
+    """Produce a zero tensor of size `shape`.
 
     Args:
+    ----
         shape : shape of tensor
         backend : tensor backend
 
     Returns:
+    -------
         new tensor
+
     """
     return Tensor.make([0] * int(prod(shape)), shape, backend=backend)
 
-def rand(shape: UserShape, backend: TensorBackend=SimpleBackend, requires_grad: bool=False) -> Tensor:
-    """
-    Produce a random tensor of size `shape`.
+
+def rand(
+    shape: UserShape,
+    backend: TensorBackend = SimpleBackend,
+    requires_grad: bool = False,
+) -> Tensor:
+    """Produce a random tensor of size `shape`.
 
     Args:
+    ----
         shape : shape of tensor
         backend : tensor backend
         requires_grad : turn on autodifferentiation
 
     Returns:
+    -------
         :class:`Tensor` : new tensor
+
     """
     vals = [random.random() for _ in range(int(prod(shape)))]
     tensor = Tensor.make(vals, shape, backend=backend)
     tensor.requires_grad_(requires_grad)
     return tensor
 
-def _tensor(ls: Any, shape: UserShape, backend: TensorBackend=SimpleBackend, requires_grad: bool=False) -> Tensor:
-    """
-    Produce a tensor with data ls and shape `shape`.
+
+def _tensor(
+    ls: Any,
+    shape: UserShape,
+    backend: TensorBackend = SimpleBackend,
+    requires_grad: bool = False,
+) -> Tensor:
+    """Produce a tensor with data ls and shape `shape`.
 
     Args:
+    ----
         ls: data for tensor
         shape: shape of tensor
         backend: tensor backend
         requires_grad: turn on autodifferentiation
 
     Returns:
+    -------
         new tensor
+
     """
     tensor = Tensor.make(ls, shape, backend=backend)
     tensor.requires_grad_(requires_grad)
     return tensor
 
-def tensor(ls: Any, backend: TensorBackend=SimpleBackend, requires_grad: bool=False) -> Tensor:
-    """
-    Produce a tensor with data and shape from ls
+
+def tensor(
+    ls: Any, backend: TensorBackend = SimpleBackend, requires_grad: bool = False
+) -> Tensor:
+    """Produce a tensor with data and shape from ls
 
     Args:
+    ----
         ls: data for tensor
         backend : tensor backend
         requires_grad : turn on autodifferentiation
 
     Returns:
+    -------
         :class:`Tensor` : new tensor
+
     """
     if isinstance(ls, Tensor):
         return ls
