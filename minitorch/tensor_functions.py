@@ -227,7 +227,11 @@ class Permute(Function):
         for i, j in enumerate(order):
             inv_order[j] = i
         return (
-            Tensor.make(d_output._tensor.permute(*inv_order), shape=d_output.shape, backend=d_output.backend),
+            Tensor.make(
+                d_output._tensor.permute(*inv_order),
+                shape=d_output.shape,
+                backend=d_output.backend,
+            ),
             0.0,
         )
 
