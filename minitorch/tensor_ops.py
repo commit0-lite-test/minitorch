@@ -12,15 +12,17 @@ if TYPE_CHECKING:
 
 class MapProto(Protocol):
     def __call__(self, x: Tensor, out: Optional[Tensor] = ..., /) -> Tensor:
-        """
-        Call the map function.
+        """Call the map function.
 
         Args:
+        ----
             x: Input tensor
             out: Optional output tensor
 
         Returns:
+        -------
             Resulting tensor
+
         """
         ...
 
@@ -33,11 +35,15 @@ class TensorOps:
         raise NotImplementedError()
 
     @staticmethod
-    def zip(fn: Callable[[float, float], float]) -> Callable[["Tensor", "Tensor"], "Tensor"]:
+    def zip(
+        fn: Callable[[float, float], float],
+    ) -> Callable[["Tensor", "Tensor"], "Tensor"]:
         raise NotImplementedError()
 
     @staticmethod
-    def reduce(fn: Callable[[float, float], float], start: float = 0.0) -> Callable[["Tensor", int], "Tensor"]:
+    def reduce(
+        fn: Callable[[float, float], float], start: float = 0.0
+    ) -> Callable[["Tensor", int], "Tensor"]:
         raise NotImplementedError()
 
     @staticmethod
