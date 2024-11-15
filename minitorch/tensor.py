@@ -46,13 +46,14 @@ _tensor_count = 0
 
 
 class Tensor:
+    """Tensor is a generalization of Scalar in that it is a Variable that
+    handles multidimensional arrays.
+    """
+
     @classmethod
     def zeros(cls, shape: Tuple[int, ...]) -> Tensor:
         """Create a new tensor filled with zeros."""
         raise NotImplementedError("zeros method not implemented")
-    """Tensor is a generalization of Scalar in that it is a Variable that
-    handles multidimensional arrays.
-    """
 
     backend: TensorBackend
     history: Optional[History]
