@@ -8,10 +8,9 @@ from .operators import prod
 
 MAX_DIMS = 32
 
+
 def strides_from_shape(shape: UserShape) -> UserStrides:
-    """
-    Compute the strides for a contiguous tensor given its shape.
-    """
+    """Compute the strides for a contiguous tensor given its shape."""
     layout = [1]
     offset = 1
     for s in reversed(shape[1:]):
