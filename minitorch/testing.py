@@ -1,9 +1,10 @@
 from typing import Callable, Generic, Iterable, Tuple, TypeVar
 import minitorch.operators as operators
-A = TypeVar('A')
+
+A = TypeVar("A")
+
 
 class MathTest(Generic[A]):
-
     @staticmethod
     def neg(a: A) -> A:
         """Negate the argument"""
@@ -80,10 +81,14 @@ class MathTest(Generic[A]):
         return operators.mul(a, operators.inv(b))
 
     @classmethod
-    def _tests(cls) -> Tuple[Tuple[str, Callable[[A], A]], Tuple[str, Callable[[A, A], A]], Tuple[str, Callable[[Iterable[A]], A]]]:
-        """
-        Returns a list of all the math tests.
-        """
+    def _tests(
+        cls,
+    ) -> Tuple[
+        Tuple[str, Callable[[A], A]],
+        Tuple[str, Callable[[A, A], A]],
+        Tuple[str, Callable[[Iterable[A]], A]],
+    ]:
+        """Returns a list of all the math tests."""
         one_arg = [
             ("neg", cls.neg),
             ("addConstant", cls.addConstant),
@@ -96,14 +101,11 @@ class MathTest(Generic[A]):
             ("sig", cls.sig),
             ("log", cls.log),
             ("relu", cls.relu),
-            ("exp", cls.exp)
+            ("exp", cls.exp),
         ]
-        two_arg = [
-            ("add2", cls.add2),
-            ("mul2", cls.mul2),
-            ("div2", cls.div2)
-        ]
+        two_arg = [("add2", cls.add2), ("mul2", cls.mul2), ("div2", cls.div2)]
         return (one_arg, two_arg, [])
+
 
 class MathTestVariable(MathTest):
     pass
