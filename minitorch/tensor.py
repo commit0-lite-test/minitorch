@@ -51,9 +51,9 @@ class Tensor:
     """
 
     @classmethod
-    def zeros(cls, shape: Tuple[int, ...]) -> Tensor:
+    def zeros(cls, shape: Tuple[int, ...], backend: Optional[TensorBackend] = None) -> Tensor:
         """Create a new tensor filled with zeros."""
-        raise NotImplementedError("zeros method not implemented")
+        return cls.make([0.0] * int(np.prod(shape)), shape, backend=backend)
 
     backend: TensorBackend
     history: Optional[History]
