@@ -84,7 +84,20 @@ class SimpleOps(TensorOps):
         Returns:
             new tensor data
         """
-        pass
+        def _map(a: Tensor, out: Optional[Tensor] = None) -> Tensor:
+            if out is None:
+                out = a.zeros(a.shape)
+            tensor_map(fn)(
+                a._tensor._storage,
+                a._tensor._shape,
+                a._tensor._strides,
+                out._tensor._storage,
+                out._tensor._shape,
+                out._tensor._strides,
+            )
+            return out
+
+        return _map
 
     @staticmethod
     def zip(fn: Callable[[float, float], float]) -> Callable[['Tensor', 'Tensor'], 'Tensor']:
@@ -115,7 +128,23 @@ class SimpleOps(TensorOps):
         Returns:
             :class:`TensorData` : new tensor data
         """
-        pass
+        def _zip(a: Tensor, b: Tensor) -> Tensor:
+            out_shape = shape_broadcast(a.shape, b.shape)
+            out = a.zeros(out_shape)
+            tensor_zip(fn)(
+                a._tensor._storage,
+                a._tensor._shape,
+                a._tensor._strides,
+                b._tensor._storage,
+                b._tensor._shape,
+                b._tensor._strides,
+                out._tensor._storage,
+                out._tensor._shape,
+                out._tensor._strides,
+            )
+            return out
+
+        return _zip
 
     @staticmethod
     def reduce(fn: Callable[[float, float], float], start: float=0.0) -> Callable[['Tensor', int], 'Tensor']:
@@ -141,7 +170,22 @@ class SimpleOps(TensorOps):
         Returns:
             :class:`TensorData` : new tensor
         """
-        pass
+        def _reduce(a: Tensor, dim: int) -> Tensor:
+            out_shape = list(a.shape)
+            out_shape[dim] = 1
+            out = a.zeros(tuple(out_shape))
+            tensor_reduce(fn)(
+                out._tensor._storage,
+                out._tensor._shape,
+                out._tensor._strides,
+                a._tensor._storage,
+                a._tensor._shape,
+                a._tensor._strides,
+                dim,
+            )
+            return out
+
+        return _reduce
     is_cuda = False
 
 def tensor_map(fn: Callable[[float], float]) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides], None]:
