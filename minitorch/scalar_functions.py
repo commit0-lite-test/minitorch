@@ -7,6 +7,7 @@ from .scalar import Scalar, ScalarLike
 if TYPE_CHECKING:
     from .scalar_history import ScalarHistory
 
+
 def wrap_tuple(x: Any) -> Tuple[Any, ...]:
     """Turn a possible value into a tuple"""
     if isinstance(x, tuple):
