@@ -106,11 +106,7 @@ class Conv1dFun(Function):
         ctx.save_for_backward(input, weight)
         batch, in_channels, width = input.shape
         out_channels, _, k_width = weight.shape
-        out = Tensor.make(
-            Tensor.zeros((batch, out_channels, width)),
-            (batch, out_channels, width),
-            backend=input.backend,
-        )
+        out = input.zeros((batch, out_channels, width))
         tensor_conv1d(
             out._tensor,
             out.shape,
@@ -224,11 +220,7 @@ class Conv2dFun(Function):
         ctx.save_for_backward(input, weight)
         batch, in_channels, height, width = input.shape
         out_channels, _, k_height, k_width = weight.shape
-        out = Tensor.make(
-            Tensor.zeros((batch, out_channels, height, width)),
-            (batch, out_channels, height, width),
-            backend=input.backend,
-        )
+        out = input.zeros((batch, out_channels, height, width))
         tensor_conv2d(
             out._tensor,
             out.shape,
