@@ -72,31 +72,31 @@ class Scalar:
         return Mul.apply(b, Inv.apply(self))
 
     def __add__(self, b: ScalarLike) -> Scalar:
-        return Add.apply(self, b)
+        return Add.apply(self, b)  # type: ignore
 
     def __bool__(self) -> bool:
         return bool(self.data)
 
     def __lt__(self, b: ScalarLike) -> Scalar:
-        return LT.apply(self, b)
+        return LT.apply(self, b)  # type: ignore
 
     def __gt__(self, b: ScalarLike) -> Scalar:
-        return LT.apply(b, self)
+        return LT.apply(b, self)  # type: ignore
 
     def __eq__(self, b: ScalarLike) -> Scalar:
-        return EQ.apply(self, b)
+        return EQ.apply(self, b)  # type: ignore
 
     def __sub__(self, b: ScalarLike) -> Scalar:
-        return Add.apply(self, Neg.apply(b))
+        return Add.apply(self, Neg.apply(b))  # type: ignore
 
     def __neg__(self) -> Scalar:
-        return Neg.apply(self)
+        return Neg.apply(self)  # type: ignore
 
     def __radd__(self, b: ScalarLike) -> Scalar:
-        return self + b
+        return self + b  # type: ignore
 
     def __rmul__(self, b: ScalarLike) -> Scalar:
-        return self * b
+        return self * b  # type: ignore
 
     def accumulate_derivative(self, x: Any) -> None:
         """Add `val` to the the derivative accumulated on this variable.
@@ -113,7 +113,7 @@ class Scalar:
 
     def is_leaf(self) -> bool:
         """True if this variable created by the user (no `last_fn`)"""
-        return self.history.last_fn is None
+        return self.history is None or self.history.last_fn is None
 
     def backward(self, d_output: Optional[float] = None) -> None:
         """Calls autodiff to fill in the derivatives for the history of this object.
