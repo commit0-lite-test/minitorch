@@ -8,8 +8,13 @@ ScalarLike = Union[float, int, "Scalar"]
 
 
 class Variable(Protocol):
-    def is_constant(self) -> bool: ...
-    def accumulate_derivative(self, deriv: Any) -> None: ...
+    def is_constant(self) -> bool:
+        """Check if the variable is constant."""
+        ...
+
+    def accumulate_derivative(self, deriv: Any) -> None:
+        """Accumulate the derivative for this variable."""
+        ...
 
 
 @dataclass
@@ -40,6 +45,10 @@ class Scalar:
     number's creation. They can only be manipulated by
     `ScalarFunction`.
     """
+
+    def is_constant(self) -> bool:
+        """Check if the scalar is constant."""
+        return self.history is None
 
     history: Optional[ScalarHistory]
     derivative: Optional[float]
@@ -114,7 +123,7 @@ class Scalar:
         """
         if self.derivative is None:
             self.derivative = 0.0
-        self.derivative += x
+        self.derivative += deriv
 
     def is_leaf(self) -> bool:
         """True if this variable created by the user (no `last_fn`)"""
