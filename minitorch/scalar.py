@@ -1,43 +1,53 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Iterable, Optional, Sequence, Tuple, Type, Union
-import numpy as np
-from .autodiff import Context, Variable, backpropagate, central_difference
-from .scalar_functions import EQ, LT, Add, Exp, Inv, Log, Mul, Neg, ReLU, ScalarFunction, Sigmoid
-ScalarLike = Union[float, int, 'Scalar']
+from typing import Any, Optional, Sequence, Type, Union
+from .autodiff import Context, backpropagate, central_difference
+from .scalar_functions import EQ, LT, Add, Inv, Mul, Neg, ScalarFunction
+
+ScalarLike = Union[float, int, "Scalar"]
+
 
 @dataclass
 class ScalarHistory:
-    """
-    `ScalarHistory` stores the history of `Function` operations that was
+    """`ScalarHistory` stores the history of `Function` operations that was
     used to construct the current Variable.
 
-    Attributes:
+    Attributes
+    ----------
         last_fn : The last Function that was called.
         ctx : The context for that Function.
         inputs : The inputs that were given when `last_fn.forward` was called.
 
     """
+
     last_fn: Optional[Type[ScalarFunction]] = None
     ctx: Optional[Context] = None
     inputs: Sequence[Scalar] = ()
+
+
 _var_count = 0
 
+
 class Scalar:
-    """
-    A reimplementation of scalar values for autodifferentiation
+    """A reimplementation of scalar values for autodifferentiation
     tracking. Scalar Variables behave as close as possible to standard
     Python numbers while also tracking the operations that led to the
     number's creation. They can only be manipulated by
     `ScalarFunction`.
     """
+
     history: Optional[ScalarHistory]
     derivative: Optional[float]
     data: float
     unique_id: int
     name: str
 
-    def __init__(self, v: float, back: ScalarHistory=ScalarHistory(), name: Optional[str]=None):
+    def __init__(
+        self,
+        v: float,
+        back: ScalarHistory = ScalarHistory(),
+        name: Optional[str] = None,
+    ):
         global _var_count
         _var_count += 1
         self.unique_id = _var_count
@@ -50,7 +60,7 @@ class Scalar:
             self.name = str(self.unique_id)
 
     def __repr__(self) -> str:
-        return 'Scalar(%f)' % self.data
+        return "Scalar(%f)" % self.data
 
     def __mul__(self, b: ScalarLike) -> Scalar:
         return Mul.apply(self, b)
@@ -89,12 +99,13 @@ class Scalar:
         return self * b
 
     def accumulate_derivative(self, x: Any) -> None:
-        """
-        Add `val` to the the derivative accumulated on this variable.
+        """Add `val` to the the derivative accumulated on this variable.
         Should only be called during autodifferentiation on leaf variables.
 
         Args:
+        ----
             x: value to be accumulated
+
         """
         if self.derivative is None:
             self.derivative = 0.0
@@ -104,30 +115,33 @@ class Scalar:
         """True if this variable created by the user (no `last_fn`)"""
         return self.history.last_fn is None
 
-    def backward(self, d_output: Optional[float]=None) -> None:
-        """
-        Calls autodiff to fill in the derivatives for the history of this object.
+    def backward(self, d_output: Optional[float] = None) -> None:
+        """Calls autodiff to fill in the derivatives for the history of this object.
 
         Args:
+        ----
             d_output (number, opt): starting derivative to backpropagate through the model
                                    (typically left out, and assumed to be 1.0).
+
         """
         if d_output is None:
             d_output = 1.0
         backpropagate(self, d_output)
 
+
 def derivative_check(f: Any, *scalars: Scalar) -> None:
-    """
-    Checks that autodiff works on a python function.
+    """Checks that autodiff works on a python function.
     Asserts False if derivative is incorrect.
 
-    Parameters:
+    Parameters
+    ----------
         f : function from n-scalars to 1-scalar.
         *scalars  : n input scalar values.
+
     """
     out = f(*scalars)
     out.backward()
-    
+
     for i, x in enumerate(scalars):
         check = central_difference(f, *scalars, arg=i)
         assert abs(x.derivative - check) < 1e-2, (
