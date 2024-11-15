@@ -17,7 +17,12 @@ def central_difference(f: Any, *vals: Any, arg: int=0, epsilon: float=1e-06) -> 
     Returns:
         An approximation of $f'_i(x_0, \\ldots, x_{n-1})$
     """
-    pass
+    vals_list = list(vals)
+    vals_plus_epsilon = vals_list.copy()
+    vals_plus_epsilon[arg] += epsilon
+    vals_minus_epsilon = vals_list.copy()
+    vals_minus_epsilon[arg] -= epsilon
+    return (f(*vals_plus_epsilon) - f(*vals_minus_epsilon)) / (2 * epsilon)
 variable_count = 1
 
 class Variable(Protocol):
@@ -33,7 +38,19 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    pass
+    visited = set()
+    result = []
+
+    def dfs(var):
+        if var not in visited and not var.is_constant():
+            visited.add(var)
+            if hasattr(var, 'history') and var.history is not None:
+                for child_var in var.history.inputs:
+                    dfs(child_var)
+            result.append(var)
+
+    dfs(variable)
+    return reversed(result)
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
     """
@@ -46,7 +63,20 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    pass
+    queue = [(variable, deriv)]
+    visited = set()
+
+    while queue:
+        var, d = queue.pop(0)
+        if var in visited:
+            continue
+        visited.add(var)
+
+        if var.is_leaf():
+            var.accumulate_derivative(d)
+        elif var.history:
+            for inp, grad in zip(var.history.inputs, var.history.backprop_step(d)):
+                queue.append((inp, grad))
 
 @dataclass
 class Context:
@@ -58,4 +88,5 @@ class Context:
 
     def save_for_backward(self, *values: Any) -> None:
         """Store the given `values` if they need to be used during backpropagation."""
-        pass
+        if not self.no_grad:
+            self.saved_values = values
