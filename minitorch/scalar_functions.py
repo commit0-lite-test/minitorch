@@ -41,7 +41,7 @@ class ScalarFunction:
         raise NotImplementedError()
 
     @classmethod
-    def apply(cls, *vals: ScalarLike) -> ScalarLike:
+    def apply(cls, *vals: ScalarLike) -> Union[Scalar, Tuple[Scalar, ...]]:
         """Apply the function to values"""
         raw_vals = []
         scalars = []
@@ -62,7 +62,7 @@ class ScalarFunction:
         if len(result) == 1:
             result = result[0]
 
-        if len(scalars) > 0:
+        if len(scalars) > 0 and isinstance(result, Scalar):
             result.history = ScalarHistory(cls, ctx, scalars)
 
         return result
