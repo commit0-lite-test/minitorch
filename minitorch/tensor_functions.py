@@ -160,6 +160,7 @@ class All(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Optional[int] = None) -> Tensor:
         if dim is not None:
+            from .operators import prod
             return (
                 a.permute(*[i for i in range(a.dims) if i != dim] + [dim])
                 .contiguous()
@@ -280,7 +281,8 @@ def zeros(shape: UserShape, backend: TensorBackend = SimpleBackend) -> Tensor:
         new tensor
 
     """
-    return Tensor.make([0] * int(prod(shape)), shape, backend=backend)
+    from .operators import prod
+    return Tensor.make([0.0] * int(prod(shape)), shape, backend=backend)
 
 
 def rand(
@@ -301,9 +303,11 @@ def rand(
         :class:`Tensor` : new tensor
 
     """
+    from .operators import prod
     vals = [random.random() for _ in range(int(prod(shape)))]
     tensor = Tensor.make(vals, shape, backend=backend)
-    tensor.requires_grad_(requires_grad)
+    if requires_grad:
+        tensor.requires_grad = True
     return tensor
 
 
