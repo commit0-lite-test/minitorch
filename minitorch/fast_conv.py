@@ -1,17 +1,28 @@
-from typing import Tuple
-import numpy as np
 from numba import njit, prange
 from .autodiff import Context
 from .tensor import Tensor
-from .tensor_data import MAX_DIMS, Index, Shape, Strides, broadcast_index, index_to_position, to_index
+from .tensor_data import Shape, Strides, broadcast_index, index_to_position, to_index
 from .tensor_functions import Function
-to_index = njit(inline='always')(to_index)
-index_to_position = njit(inline='always')(index_to_position)
-broadcast_index = njit(inline='always')(broadcast_index)
 
-def _tensor_conv1d(out: Tensor, out_shape: Shape, out_strides: Strides, out_size: int, input: Tensor, input_shape: Shape, input_strides: Strides, weight: Tensor, weight_shape: Shape, weight_strides: Strides, reverse: bool) -> None:
-    """
-    1D Convolution implementation.
+to_index = njit(inline="always")(to_index)
+index_to_position = njit(inline="always")(index_to_position)
+broadcast_index = njit(inline="always")(broadcast_index)
+
+
+def _tensor_conv1d(
+    out: Tensor,
+    out_shape: Shape,
+    out_strides: Strides,
+    out_size: int,
+    input: Tensor,
+    input_shape: Shape,
+    input_strides: Strides,
+    weight: Tensor,
+    weight_shape: Shape,
+    weight_strides: Strides,
+    reverse: bool,
+) -> None:
+    """1D Convolution implementation.
 
     Given input tensor of
 
@@ -29,6 +40,7 @@ def _tensor_conv1d(out: Tensor, out_shape: Shape, out_strides: Strides, out_size
     (See diagrams)
 
     Args:
+    ----
         out (Storage): storage for `out` tensor.
         out_shape (Shape): shape for `out` tensor.
         out_strides (Strides): strides for `out` tensor.
@@ -40,6 +52,7 @@ def _tensor_conv1d(out: Tensor, out_shape: Shape, out_strides: Strides, out_size
         weight_shape (Shape): shape for `input` tensor.
         weight_strides (Strides): strides for `input` tensor.
         reverse (bool): anchor weight at left or right
+
     """
     batch, in_channels, width = input_shape
     out_channels, _, k_width = weight_shape
@@ -59,22 +72,26 @@ def _tensor_conv1d(out: Tensor, out_shape: Shape, out_strides: Strides, out_size
                             in_pos = index_to_position((b, ic, w_pos), input_strides)
                             w_pos = index_to_position((oc, ic, kw), weight_strides)
                             out[out_pos] += input[in_pos] * weight[w_pos]
+
+
 tensor_conv1d = njit(parallel=True)(_tensor_conv1d)
 
-class Conv1dFun(Function):
 
+class Conv1dFun(Function):
     @staticmethod
     def forward(ctx: Context, input: Tensor, weight: Tensor) -> Tensor:
-        """
-        Compute a 1D Convolution
+        """Compute a 1D Convolution
 
         Args:
+        ----
             ctx : Context
             input : batch x in_channel x h x w
             weight : out_channel x in_channel x kh x kw
 
         Returns:
+        -------
             batch x out_channel x h x w
+
         """
         ctx.save_for_backward(input, weight)
         batch, in_channels, width = input.shape
@@ -94,11 +111,25 @@ class Conv1dFun(Function):
             False,
         )
         return out
+
+
 conv1d = Conv1dFun.apply
 
-def _tensor_conv2d(out: Tensor, out_shape: Shape, out_strides: Strides, out_size: int, input: Tensor, input_shape: Shape, input_strides: Strides, weight: Tensor, weight_shape: Shape, weight_strides: Strides, reverse: bool) -> None:
-    """
-    2D Convolution implementation.
+
+def _tensor_conv2d(
+    out: Tensor,
+    out_shape: Shape,
+    out_strides: Strides,
+    out_size: int,
+    input: Tensor,
+    input_shape: Shape,
+    input_strides: Strides,
+    weight: Tensor,
+    weight_shape: Shape,
+    weight_strides: Strides,
+    reverse: bool,
+) -> None:
+    """2D Convolution implementation.
 
     Given input tensor of
 
@@ -117,6 +148,7 @@ def _tensor_conv2d(out: Tensor, out_shape: Shape, out_strides: Strides, out_size
 
 
     Args:
+    ----
         out (Storage): storage for `out` tensor.
         out_shape (Shape): shape for `out` tensor.
         out_strides (Strides): strides for `out` tensor.
@@ -128,6 +160,7 @@ def _tensor_conv2d(out: Tensor, out_shape: Shape, out_strides: Strides, out_size
         weight_shape (Shape): shape for `input` tensor.
         weight_strides (Strides): strides for `input` tensor.
         reverse (bool): anchor weight at top-left or bottom-right
+
     """
     batch, in_channels, height, width = input_shape
     out_channels, _, k_height, k_width = weight_shape
@@ -146,25 +179,33 @@ def _tensor_conv2d(out: Tensor, out_shape: Shape, out_strides: Strides, out_size
                                 else:
                                     h_pos, w_pos = h - kh, w - kw
                                 if 0 <= h_pos < height and 0 <= w_pos < width:
-                                    in_pos = index_to_position((b, ic, h_pos, w_pos), input_strides)
-                                    w_pos = index_to_position((oc, ic, kh, kw), weight_strides)
+                                    in_pos = index_to_position(
+                                        (b, ic, h_pos, w_pos), input_strides
+                                    )
+                                    w_pos = index_to_position(
+                                        (oc, ic, kh, kw), weight_strides
+                                    )
                                     out[out_pos] += input[in_pos] * weight[w_pos]
+
+
 tensor_conv2d = njit(parallel=True, fastmath=True)(_tensor_conv2d)
 
-class Conv2dFun(Function):
 
+class Conv2dFun(Function):
     @staticmethod
     def forward(ctx: Context, input: Tensor, weight: Tensor) -> Tensor:
-        """
-        Compute a 2D Convolution
+        """Compute a 2D Convolution
 
         Args:
+        ----
             ctx : Context
             input : batch x in_channel x h x w
             weight  : out_channel x in_channel x kh x kw
 
         Returns:
+        -------
             (:class:`Tensor`) : batch x out_channel x h x w
+
         """
         ctx.save_for_backward(input, weight)
         batch, in_channels, height, width = input.shape
@@ -184,4 +225,6 @@ class Conv2dFun(Function):
             False,
         )
         return out
+
+
 conv2d = Conv2dFun.apply
