@@ -1,3 +1,5 @@
+from typing import Tuple
+import numpy as np
 from numba import njit, prange
 from .autodiff import Context
 from .tensor import Tensor
@@ -7,6 +9,9 @@ from .tensor_functions import Function
 to_index = njit(inline="always")(to_index)
 index_to_position = njit(inline="always")(index_to_position)
 broadcast_index = njit(inline="always")(broadcast_index)
+
+# Type aliases
+Index = Tuple[int, ...]
 
 
 def _tensor_conv1d(
@@ -60,7 +65,7 @@ def _tensor_conv1d(
     for b in prange(batch):
         for oc in prange(out_channels):
             for w in prange(width):
-                out_pos = index_to_position((b, oc, w), out_strides)
+                out_pos = index_to_position(np.array([b, oc, w]), out_strides)
                 out[out_pos] = 0.0
                 for ic in prange(in_channels):
                     for kw in range(k_width):
@@ -69,8 +74,8 @@ def _tensor_conv1d(
                         else:
                             w_pos = w - kw
                         if 0 <= w_pos < width:
-                            in_pos = index_to_position((b, ic, w_pos), input_strides)
-                            w_pos = index_to_position((oc, ic, kw), weight_strides)
+                            in_pos = index_to_position(np.array([b, ic, w_pos]), input_strides)
+                            w_pos = index_to_position(np.array([oc, ic, kw]), weight_strides)
                             out[out_pos] += input[in_pos] * weight[w_pos]
 
 
@@ -80,23 +85,21 @@ tensor_conv1d = njit(parallel=True)(_tensor_conv1d)
 class Conv1dFun(Function):
     @staticmethod
     def forward(ctx: Context, input: Tensor, weight: Tensor) -> Tensor:
-        """Compute a 1D Convolution
+        """
+        Compute a 1D Convolution
 
         Args:
-        ----
-            ctx : Context
-            input : batch x in_channel x h x w
-            weight : out_channel x in_channel x kh x kw
+            ctx (Context): The context for the operation
+            input (Tensor): Input tensor of shape (batch, in_channel, width)
+            weight (Tensor): Weight tensor of shape (out_channel, in_channel, k_width)
 
         Returns:
-        -------
-            batch x out_channel x h x w
-
+            Tensor: Output tensor of shape (batch, out_channel, width)
         """
         ctx.save_for_backward(input, weight)
         batch, in_channels, width = input.shape
         out_channels, _, k_width = weight.shape
-        out = input.zeros((batch, out_channels, width))
+        out = Tensor.zeros((batch, out_channels, width))
         tensor_conv1d(
             out._tensor,
             out.shape,
@@ -169,7 +172,7 @@ def _tensor_conv2d(
         for oc in prange(out_channels):
             for h in prange(height):
                 for w in prange(width):
-                    out_pos = index_to_position((b, oc, h, w), out_strides)
+                    out_pos = index_to_position(np.array([b, oc, h, w]), out_strides)
                     out[out_pos] = 0.0
                     for ic in prange(in_channels):
                         for kh in range(k_height):
@@ -180,10 +183,10 @@ def _tensor_conv2d(
                                     h_pos, w_pos = h - kh, w - kw
                                 if 0 <= h_pos < height and 0 <= w_pos < width:
                                     in_pos = index_to_position(
-                                        (b, ic, h_pos, w_pos), input_strides
+                                        np.array([b, ic, h_pos, w_pos]), input_strides
                                     )
                                     w_pos = index_to_position(
-                                        (oc, ic, kh, kw), weight_strides
+                                        np.array([oc, ic, kh, kw]), weight_strides
                                     )
                                     out[out_pos] += input[in_pos] * weight[w_pos]
 
@@ -194,23 +197,21 @@ tensor_conv2d = njit(parallel=True, fastmath=True)(_tensor_conv2d)
 class Conv2dFun(Function):
     @staticmethod
     def forward(ctx: Context, input: Tensor, weight: Tensor) -> Tensor:
-        """Compute a 2D Convolution
+        """
+        Compute a 2D Convolution
 
         Args:
-        ----
-            ctx : Context
-            input : batch x in_channel x h x w
-            weight  : out_channel x in_channel x kh x kw
+            ctx (Context): The context for the operation
+            input (Tensor): Input tensor of shape (batch, in_channel, height, width)
+            weight (Tensor): Weight tensor of shape (out_channel, in_channel, k_height, k_width)
 
         Returns:
-        -------
-            (:class:`Tensor`) : batch x out_channel x h x w
-
+            Tensor: Output tensor of shape (batch, out_channel, height, width)
         """
         ctx.save_for_backward(input, weight)
         batch, in_channels, height, width = input.shape
         out_channels, _, k_height, k_width = weight.shape
-        out = input.zeros((batch, out_channels, height, width))
+        out = Tensor.zeros((batch, out_channels, height, width))
         tensor_conv2d(
             out._tensor,
             out.shape,
