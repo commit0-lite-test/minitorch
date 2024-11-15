@@ -11,11 +11,42 @@ if TYPE_CHECKING:
 
 
 class MapProto(Protocol):
-    def __call__(self, x: Tensor, out: Optional[Tensor] = ..., /) -> Tensor: ...
+    def __call__(self, x: Tensor, out: Optional[Tensor] = ..., /) -> Tensor:
+        """
+        Call the map function.
+
+        Args:
+            x: Input tensor
+            out: Optional output tensor
+
+        Returns:
+            Resulting tensor
+        """
+        ...
 
 
 class TensorOps:
     cuda = False
+
+    @staticmethod
+    def map(fn: Callable[[float], float]) -> MapProto:
+        raise NotImplementedError()
+
+    @staticmethod
+    def zip(fn: Callable[[float, float], float]) -> Callable[["Tensor", "Tensor"], "Tensor"]:
+        raise NotImplementedError()
+
+    @staticmethod
+    def reduce(fn: Callable[[float, float], float], start: float = 0.0) -> Callable[["Tensor", int], "Tensor"]:
+        raise NotImplementedError()
+
+    @staticmethod
+    def matrix_multiply(a: "Tensor", b: "Tensor") -> "Tensor":
+        raise NotImplementedError()
+
+    @staticmethod
+    def cmap(fn: Callable[[float], float]) -> MapProto:
+        raise NotImplementedError()
 
 
 class TensorBackend:
