@@ -45,13 +45,13 @@ def is_close(x: float, y: float) -> float:
 
 
 def sigmoid(x: float) -> float:
-    """$f(x) =  \\frac{1.0}{(1.0 + e^{-x})}$
+    r"""$f(x) =  \frac{1.0}{(1.0 + e^{-x})}$
 
     (See https://en.wikipedia.org/wiki/Sigmoid_function )
 
     Calculate as
 
-    $f(x) =  \\frac{1.0}{(1.0 + e^{-x})}$ if x >=0 else $\\frac{e^x}{(1.0 + e^{x})}$
+    $f(x) =  \frac{1.0}{(1.0 + e^{-x})}$ if x >=0 else $\frac{e^x}{(1.0 + e^{x})}$
 
     for stability.
     """
@@ -83,7 +83,7 @@ def exp(x: float) -> float:
 
 
 def log_back(x: float, d: float) -> float:
-    """If $f = log$ as above, compute $d \\times f'(x)$"""
+    r"""If $f = log$ as above, compute $d \times f'(x)$"""
     return d / (x + EPS)
 
 
@@ -93,12 +93,12 @@ def inv(x: float) -> float:
 
 
 def inv_back(x: float, d: float) -> float:
-    """If $f(x) = 1/x$ compute $d \\times f'(x)$"""
+    r"""If $f(x) = 1/x$ compute $d \times f'(x)$"""
     return -d / ((x + EPS) ** 2)
 
 
 def relu_back(x: float, d: float) -> float:
-    """If $f = relu$ compute $d \\times f'(x)$"""
+    r"""If $f = relu$ compute $d \times f'(x)$"""
     return d if x > 0 else 0.0
 
 
@@ -153,19 +153,16 @@ def addLists(ls1: Iterable[float], ls2: Iterable[float]) -> Iterable[float]:
 def reduce(
     fn: Callable[[float, float], float], start: float
 ) -> Callable[[Iterable[float]], float]:
-    """Higher-order reduce.
+    r"""Higher-order reduce.
 
     Args:
-    ----
         fn: combine two values
         start: start value $x_0$
 
     Returns:
-    -------
          Function that takes a list `ls` of elements
-         $x_1 \\ldots x_n$ and computes the reduction :math:`fn(x_3, fn(x_2,
+         $x_1 \ldots x_n$ and computes the reduction :math:`fn(x_3, fn(x_2,
          fn(x_1, x_0)))`
-
     """
 
     def reducer(ls: Iterable[float]) -> float:
