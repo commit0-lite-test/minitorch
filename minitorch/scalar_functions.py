@@ -1,16 +1,14 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-import minitorch
 from . import operators
 from .autodiff import Context
+
 if TYPE_CHECKING:
     from typing import Tuple
-    from .scalar import Scalar, ScalarLike
+    from .scalar import Scalar
 
 from typing import Tuple
-from .autodiff import Context
-from . import operators
-import math
+
 
 def wrap_tuple(x):
     """Turn a possible value into a tuple"""
@@ -18,20 +16,22 @@ def wrap_tuple(x):
         return x
     return (x,)
 
+
 def unwrap_tuple(x):
     """Turn a singleton tuple into a value"""
     if len(x) == 1:
         return x[0]
     return x
 
+
 class ScalarFunction:
-    """
-    A wrapper for a mathematical function that processes and produces
+    """A wrapper for a mathematical function that processes and produces
     Scalar variables.
 
     This is a static class and is never instantiated. We use `class`
     here to group together the `forward` and `backward` code.
     """
+
     @staticmethod
     def forward(ctx: Context, *inputs: float) -> float:
         """Forward function, to be implemented by subclasses"""
@@ -69,8 +69,10 @@ class ScalarFunction:
 
         return result
 
+
 class Add(ScalarFunction):
     """Addition function $f(x, y) = x + y$"""
+
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
         return a + b
@@ -79,8 +81,10 @@ class Add(ScalarFunction):
     def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
         return d_output, d_output
 
+
 class Log(ScalarFunction):
     """Log function $f(x) = log(x)$"""
+
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
         ctx.save_for_backward(a)
@@ -91,8 +95,10 @@ class Log(ScalarFunction):
         (a,) = ctx.saved_values
         return (operators.log_back(a, d_output),)
 
+
 class Mul(ScalarFunction):
     """Multiplication function"""
+
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
         ctx.save_for_backward(a, b)
@@ -103,8 +109,10 @@ class Mul(ScalarFunction):
         a, b = ctx.saved_values
         return b * d_output, a * d_output
 
+
 class Inv(ScalarFunction):
     """Inverse function"""
+
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
         ctx.save_for_backward(a)
@@ -115,8 +123,10 @@ class Inv(ScalarFunction):
         (a,) = ctx.saved_values
         return (operators.inv_back(a, d_output),)
 
+
 class Neg(ScalarFunction):
     """Negation function"""
+
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
         return operators.neg(a)
@@ -125,8 +135,10 @@ class Neg(ScalarFunction):
     def backward(ctx: Context, d_output: float) -> Tuple[float]:
         return (-d_output,)
 
+
 class Sigmoid(ScalarFunction):
     """Sigmoid function"""
+
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
         sigmoid_val = operators.sigmoid(a)
@@ -138,8 +150,10 @@ class Sigmoid(ScalarFunction):
         (sigmoid_val,) = ctx.saved_values
         return (d_output * sigmoid_val * (1 - sigmoid_val),)
 
+
 class ReLU(ScalarFunction):
     """ReLU function"""
+
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
         ctx.save_for_backward(a)
@@ -150,8 +164,10 @@ class ReLU(ScalarFunction):
         (a,) = ctx.saved_values
         return (operators.relu_back(a, d_output),)
 
+
 class Exp(ScalarFunction):
     """Exp function"""
+
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
         exp_val = operators.exp(a)
@@ -163,8 +179,10 @@ class Exp(ScalarFunction):
         (exp_val,) = ctx.saved_values
         return (d_output * exp_val,)
 
+
 class LT(ScalarFunction):
     """Less-than function $f(x) =$ 1.0 if x is less than y else 0.0"""
+
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
         return operators.lt(a, b)
@@ -173,8 +191,10 @@ class LT(ScalarFunction):
     def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
         return 0.0, 0.0
 
+
 class EQ(ScalarFunction):
     """Equal function $f(x) =$ 1.0 if x is equal to y else 0.0"""
+
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
         return operators.eq(a, b)
