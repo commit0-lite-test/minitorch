@@ -1,18 +1,19 @@
-"""Implementation of the autodifferentiation Functions for Tensor."""
+"""
+Implementation of the autodifferentiation Functions for Tensor.
+"""
 
 from __future__ import annotations
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 from .autodiff import Context
 from .tensor_ops import SimpleBackend, TensorBackend
 
 if TYPE_CHECKING:
-    from typing import Any, Tuple
     from .tensor import Tensor
-    from .tensor_data import UserShape
+    from .tensor_data import UserShape, UserIndex
 
 
-def wrap_tuple(x):
+def wrap_tuple(x: Any) -> Tuple[Any, ...]:
     """Turn a possible value into a tuple"""
     if isinstance(x, tuple):
         return x
@@ -29,10 +30,11 @@ class Function:
         raise NotImplementedError("Backward not implemented")
 
     @classmethod
-    def apply(cls, *args):
+    def apply(cls, *args: Any) -> Tensor:
         ctx = Context()
         result = cls.forward(ctx, *args)
         if any(arg.history is not None for arg in args):
+            from .tensor import History
             result.history = History(cls, ctx, args)
         return result
 
