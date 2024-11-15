@@ -61,7 +61,7 @@ class Tensor:
         Returns:
              Converted to numpy array
         """
-        pass
+        return self._tensor.to_numpy()
 
     @property
     def shape(self) -> UserShape:
@@ -69,7 +69,7 @@ class Tensor:
         Returns:
              shape of the tensor
         """
-        pass
+        return self._tensor.shape
 
     @property
     def size(self) -> int:
@@ -77,7 +77,7 @@ class Tensor:
         Returns:
              int : size of the tensor
         """
-        pass
+        return self._tensor.size
 
     @property
     def dims(self) -> int:
@@ -85,11 +85,16 @@ class Tensor:
         Returns:
              int : dimensionality of the tensor
         """
-        pass
+        return len(self._tensor.shape)
 
     def _ensure_tensor(self, b: TensorLike) -> Tensor:
         """Turns a python number into a tensor with the same backend."""
-        pass
+        if isinstance(b, (float, int)):
+            return tensor([b], backend=self.backend)
+        elif isinstance(b, Tensor):
+            return b
+        else:
+            raise TypeError("Unsupported type for _ensure_tensor")
 
     def __add__(self, b: TensorLike) -> Tensor:
         return Add.apply(self, self._ensure_tensor(b))
@@ -130,23 +135,27 @@ class Tensor:
 
     def sum(self, dim: Optional[int]=None) -> Tensor:
         """Compute the sum over dimension `dim`"""
-        pass
+        return Sum.apply(self, dim)
 
     def mean(self, dim: Optional[int]=None) -> Tensor:
         """Compute the mean over dimension `dim`"""
-        pass
+        sum_tensor = self.sum(dim)
+        if dim is None:
+            return sum_tensor / self.size
+        else:
+            return sum_tensor / self.shape[dim]
 
     def permute(self, *order: int) -> Tensor:
         """Permute tensor dimensions to *order"""
-        pass
+        return Permute.apply(self, order)
 
     def view(self, *shape: int) -> Tensor:
         """Change the shape of the tensor to a new shape with the same size"""
-        pass
+        return View.apply(self, shape)
 
     def contiguous(self) -> Tensor:
         """Return a contiguous tensor with the same data"""
-        pass
+        return Copy.apply(self)
 
     def __repr__(self) -> str:
         return self._tensor.to_string()
@@ -162,7 +171,8 @@ class Tensor:
     @staticmethod
     def make(storage: Union[Storage, List[float]], shape: UserShape, strides: Optional[UserStrides]=None, backend: Optional[TensorBackend]=None) -> Tensor:
         """Create a new tensor from data"""
-        pass
+        tensor_data = TensorData(storage, shape, strides)
+        return Tensor(tensor_data, backend=backend)
 
     def expand(self, other: Tensor) -> Tensor:
         """
@@ -178,7 +188,17 @@ class Tensor:
             Expanded version of `other` with the right derivatives
 
         """
-        pass
+        if self.shape == other.shape:
+            return other
+        
+        expanded_shape = [max(s, o) for s, o in zip(self.shape, other.shape)]
+        expanded = other.zeros(tuple(expanded_shape))
+        
+        for i in range(len(expanded_shape)):
+            if self.shape[i] == 1 and other.shape[i] > 1:
+                expanded = expanded.sum(i)
+        
+        return expanded
 
     def accumulate_derivative(self, x: Any) -> None:
         """
@@ -188,14 +208,20 @@ class Tensor:
         Args:
             x : value to be accumulated
         """
-        pass
+        if self.is_leaf():
+            if self.grad is None:
+                self.grad = x
+            else:
+                self.grad += x
+        else:
+            raise RuntimeError("Derivative can only be accumulated on leaf variables.")
 
     def is_leaf(self) -> bool:
         """True if this variable created by the user (no `last_fn`)"""
-        pass
+        return self.history is None or self.history.last_fn is None
 
     def zero_grad_(self) -> None:
         """
         Reset the derivative on this variable.
         """
-        pass
+        self.grad = None
