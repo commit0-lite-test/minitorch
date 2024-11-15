@@ -74,8 +74,12 @@ def _tensor_conv1d(
                         else:
                             w_pos = w - kw
                         if 0 <= w_pos < width:
-                            in_pos = index_to_position(np.array([b, ic, w_pos]), input_strides)
-                            w_pos = index_to_position(np.array([oc, ic, kw]), weight_strides)
+                            in_pos = index_to_position(
+                                np.array([b, ic, w_pos]), input_strides
+                            )
+                            w_pos = index_to_position(
+                                np.array([oc, ic, kw]), weight_strides
+                            )
                             out[out_pos] += input[in_pos] * weight[w_pos]
 
 
@@ -85,16 +89,18 @@ tensor_conv1d = njit(parallel=True)(_tensor_conv1d)
 class Conv1dFun(Function):
     @staticmethod
     def forward(ctx: Context, input: Tensor, weight: Tensor) -> Tensor:
-        """
-        Compute a 1D Convolution
+        """Compute a 1D Convolution
 
         Args:
+        ----
             ctx (Context): The context for the operation
             input (Tensor): Input tensor of shape (batch, in_channel, width)
             weight (Tensor): Weight tensor of shape (out_channel, in_channel, k_width)
 
         Returns:
+        -------
             Tensor: Output tensor of shape (batch, out_channel, width)
+
         """
         ctx.save_for_backward(input, weight)
         batch, in_channels, width = input.shape
@@ -197,16 +203,18 @@ tensor_conv2d = njit(parallel=True, fastmath=True)(_tensor_conv2d)
 class Conv2dFun(Function):
     @staticmethod
     def forward(ctx: Context, input: Tensor, weight: Tensor) -> Tensor:
-        """
-        Compute a 2D Convolution
+        """Compute a 2D Convolution
 
         Args:
+        ----
             ctx (Context): The context for the operation
             input (Tensor): Input tensor of shape (batch, in_channel, height, width)
             weight (Tensor): Weight tensor of shape (out_channel, in_channel, k_height, k_width)
 
         Returns:
+        -------
             Tensor: Output tensor of shape (batch, out_channel, height, width)
+
         """
         ctx.save_for_backward(input, weight)
         batch, in_channels, height, width = input.shape
