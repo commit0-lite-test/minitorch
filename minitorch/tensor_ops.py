@@ -32,26 +32,31 @@ class TensorOps:
 
     @staticmethod
     def map(fn: Callable[[float], float]) -> MapProto:
+        """Apply a function elementwise to a tensor."""
         raise NotImplementedError()
 
     @staticmethod
     def zip(
         fn: Callable[[float, float], float],
     ) -> Callable[["Tensor", "Tensor"], "Tensor"]:
+        """Apply a function elementwise between two tensors."""
         raise NotImplementedError()
 
     @staticmethod
     def reduce(
         fn: Callable[[float, float], float], start: float = 0.0
     ) -> Callable[["Tensor", int], "Tensor"]:
+        """Reduce a tensor along a dimension using a function."""
         raise NotImplementedError()
 
     @staticmethod
     def matrix_multiply(a: "Tensor", b: "Tensor") -> "Tensor":
+        """Perform matrix multiplication between two tensors."""
         raise NotImplementedError()
 
     @staticmethod
     def cmap(fn: Callable[[float], float]) -> MapProto:
+        """Apply a function elementwise to a tensor (cuda version)."""
         raise NotImplementedError()
 
 
