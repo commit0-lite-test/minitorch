@@ -4,20 +4,20 @@ from typing_extensions import Protocol
 
 
 def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-06) -> Any:
-    """Computes an approximation to the derivative of `f` with respect to one arg.
+    r"""Computes an approximation to the derivative of `f` with respect to one arg.
 
     See :doc:`derivative` or https://en.wikipedia.org/wiki/Finite_difference for more details.
 
     Args:
     ----
         f : arbitrary function from n-scalar args to one value
-        *vals : n-float values $x_0 \\ldots x_{n-1}$
+        *vals : n-float values $x_0 \ldots x_{n-1}$
         arg : the number $i$ of the arg to compute the derivative
         epsilon : a small constant
 
     Returns:
     -------
-        An approximation of $f'_i(x_0, \\ldots, x_{n-1})$
+        An approximation of $f'_i(x_0, \ldots, x_{n-1})$
 
     """
     vals_list = list(vals)
@@ -80,7 +80,7 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
     Args:
     ----
         variable: The right-most variable
-        deriv  : Its derivative that we want to propagate backward to the leaves.
+        deriv: Its derivative that we want to propagate backward to the leaves.
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
 
