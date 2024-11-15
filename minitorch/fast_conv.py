@@ -41,7 +41,24 @@ def _tensor_conv1d(out: Tensor, out_shape: Shape, out_strides: Strides, out_size
         weight_strides (Strides): strides for `input` tensor.
         reverse (bool): anchor weight at left or right
     """
-    pass
+    batch, in_channels, width = input_shape
+    out_channels, _, k_width = weight_shape
+
+    for b in prange(batch):
+        for oc in prange(out_channels):
+            for w in prange(width):
+                out_pos = index_to_position((b, oc, w), out_strides)
+                out[out_pos] = 0.0
+                for ic in prange(in_channels):
+                    for kw in range(k_width):
+                        if reverse:
+                            w_pos = w + kw
+                        else:
+                            w_pos = w - kw
+                        if 0 <= w_pos < width:
+                            in_pos = index_to_position((b, ic, w_pos), input_strides)
+                            w_pos = index_to_position((oc, ic, kw), weight_strides)
+                            out[out_pos] += input[in_pos] * weight[w_pos]
 tensor_conv1d = njit(parallel=True)(_tensor_conv1d)
 
 class Conv1dFun(Function):
@@ -59,7 +76,24 @@ class Conv1dFun(Function):
         Returns:
             batch x out_channel x h x w
         """
-        pass
+        ctx.save_for_backward(input, weight)
+        batch, in_channels, width = input.shape
+        out_channels, _, k_width = weight.shape
+        out = input.zeros((batch, out_channels, width))
+        tensor_conv1d(
+            out._tensor,
+            out.shape,
+            out.strides,
+            out._tensor.size,
+            input._tensor,
+            input.shape,
+            input.strides,
+            weight._tensor,
+            weight.shape,
+            weight.strides,
+            False,
+        )
+        return out
 conv1d = Conv1dFun.apply
 
 def _tensor_conv2d(out: Tensor, out_shape: Shape, out_strides: Strides, out_size: int, input: Tensor, input_shape: Shape, input_strides: Strides, weight: Tensor, weight_shape: Shape, weight_strides: Strides, reverse: bool) -> None:
@@ -95,7 +129,26 @@ def _tensor_conv2d(out: Tensor, out_shape: Shape, out_strides: Strides, out_size
         weight_strides (Strides): strides for `input` tensor.
         reverse (bool): anchor weight at top-left or bottom-right
     """
-    pass
+    batch, in_channels, height, width = input_shape
+    out_channels, _, k_height, k_width = weight_shape
+
+    for b in prange(batch):
+        for oc in prange(out_channels):
+            for h in prange(height):
+                for w in prange(width):
+                    out_pos = index_to_position((b, oc, h, w), out_strides)
+                    out[out_pos] = 0.0
+                    for ic in prange(in_channels):
+                        for kh in range(k_height):
+                            for kw in range(k_width):
+                                if reverse:
+                                    h_pos, w_pos = h + kh, w + kw
+                                else:
+                                    h_pos, w_pos = h - kh, w - kw
+                                if 0 <= h_pos < height and 0 <= w_pos < width:
+                                    in_pos = index_to_position((b, ic, h_pos, w_pos), input_strides)
+                                    w_pos = index_to_position((oc, ic, kh, kw), weight_strides)
+                                    out[out_pos] += input[in_pos] * weight[w_pos]
 tensor_conv2d = njit(parallel=True, fastmath=True)(_tensor_conv2d)
 
 class Conv2dFun(Function):
@@ -113,5 +166,22 @@ class Conv2dFun(Function):
         Returns:
             (:class:`Tensor`) : batch x out_channel x h x w
         """
-        pass
+        ctx.save_for_backward(input, weight)
+        batch, in_channels, height, width = input.shape
+        out_channels, _, k_height, k_width = weight.shape
+        out = input.zeros((batch, out_channels, height, width))
+        tensor_conv2d(
+            out._tensor,
+            out.shape,
+            out.strides,
+            out._tensor.size,
+            input._tensor,
+            input.shape,
+            input.strides,
+            weight._tensor,
+            weight.shape,
+            weight.strides,
+            False,
+        )
+        return out
 conv2d = Conv2dFun.apply
