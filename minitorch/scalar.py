@@ -62,25 +62,25 @@ class Scalar:
         return Mul.apply(b, Inv.apply(self))
 
     def __add__(self, b: ScalarLike) -> Scalar:
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Add.apply(self, b)
 
     def __bool__(self) -> bool:
         return bool(self.data)
 
     def __lt__(self, b: ScalarLike) -> Scalar:
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return LT.apply(self, b)
 
     def __gt__(self, b: ScalarLike) -> Scalar:
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return LT.apply(b, self)
 
     def __eq__(self, b: ScalarLike) -> Scalar:
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return EQ.apply(self, b)
 
     def __sub__(self, b: ScalarLike) -> Scalar:
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Add.apply(self, Neg.apply(b))
 
     def __neg__(self) -> Scalar:
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Neg.apply(self)
 
     def __radd__(self, b: ScalarLike) -> Scalar:
         return self + b
@@ -96,11 +96,13 @@ class Scalar:
         Args:
             x: value to be accumulated
         """
-        pass
+        if self.derivative is None:
+            self.derivative = 0.0
+        self.derivative += x
 
     def is_leaf(self) -> bool:
         """True if this variable created by the user (no `last_fn`)"""
-        pass
+        return self.history.last_fn is None
 
     def backward(self, d_output: Optional[float]=None) -> None:
         """
@@ -110,7 +112,9 @@ class Scalar:
             d_output (number, opt): starting derivative to backpropagate through the model
                                    (typically left out, and assumed to be 1.0).
         """
-        pass
+        if d_output is None:
+            d_output = 1.0
+        backpropagate(self, d_output)
 
 def derivative_check(f: Any, *scalars: Scalar) -> None:
     """
@@ -121,4 +125,12 @@ def derivative_check(f: Any, *scalars: Scalar) -> None:
         f : function from n-scalars to 1-scalar.
         *scalars  : n input scalar values.
     """
-    pass
+    out = f(*scalars)
+    out.backward()
+    
+    for i, x in enumerate(scalars):
+        check = central_difference(f, *scalars, arg=i)
+        assert abs(x.derivative - check) < 1e-2, (
+            f"Derivative of {f.__name__} with respect to argument {i} is incorrect. "
+            f"Expected {check}, got {x.derivative}"
+        )
