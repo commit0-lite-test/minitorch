@@ -8,6 +8,17 @@ from .operators import prod
 
 MAX_DIMS = 32
 
+def strides_from_shape(shape: UserShape) -> UserStrides:
+    """
+    Compute the strides for a contiguous tensor given its shape.
+    """
+    layout = [1]
+    offset = 1
+    for s in reversed(shape[1:]):
+        offset *= s
+        layout.append(offset)
+    return tuple(reversed(layout))
+
 
 class IndexingError(RuntimeError):
     """Exception raised for indexing errors."""
