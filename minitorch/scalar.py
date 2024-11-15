@@ -1,10 +1,14 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Optional, Sequence, Type, Union
+from typing import Any, Optional, Sequence, Type, Union, Tuple, Protocol
 from .autodiff import Context, backpropagate, central_difference
 from .scalar_functions import EQ, LT, Add, Inv, Mul, Neg, ScalarFunction
 
 ScalarLike = Union[float, int, "Scalar"]
+
+class Variable(Protocol):
+    def is_constant(self) -> bool: ...
+    def accumulate_derivative(self, deriv: Any) -> None: ...
 
 
 @dataclass
@@ -63,13 +67,13 @@ class Scalar:
         return "Scalar(%f)" % self.data
 
     def __mul__(self, b: ScalarLike) -> Scalar:
-        return Mul.apply(self, b)
+        return Mul.apply(self, b)  # type: ignore
 
     def __truediv__(self, b: ScalarLike) -> Scalar:
-        return Mul.apply(self, Inv.apply(b))
+        return Mul.apply(self, Inv.apply(b))  # type: ignore
 
     def __rtruediv__(self, b: ScalarLike) -> Scalar:
-        return Mul.apply(b, Inv.apply(self))
+        return Mul.apply(b, Inv.apply(self))  # type: ignore
 
     def __add__(self, b: ScalarLike) -> Scalar:
         return Add.apply(self, b)  # type: ignore
@@ -98,13 +102,13 @@ class Scalar:
     def __rmul__(self, b: ScalarLike) -> Scalar:
         return self * b  # type: ignore
 
-    def accumulate_derivative(self, x: Any) -> None:
-        """Add `x` to the derivative accumulated on this variable.
+    def accumulate_derivative(self, deriv: Any) -> None:
+        """Add `deriv` to the derivative accumulated on this variable.
         Should only be called during autodifferentiation on leaf variables.
 
         Args:
         ----
-            x: value to be accumulated
+            deriv: value to be accumulated
 
         """
         if self.derivative is None:
