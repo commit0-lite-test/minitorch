@@ -1,16 +1,14 @@
-"""
-Implementation of the autodifferentiation Functions for Tensor.
-"""
+"""Implementation of the autodifferentiation Functions for Tensor."""
 
 from __future__ import annotations
 import random
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional, Tuple
 from .autodiff import Context
 from .tensor_ops import SimpleBackend, TensorBackend
 
 if TYPE_CHECKING:
     from .tensor import Tensor
-    from .tensor_data import UserShape, UserIndex
+    from .tensor_data import UserShape
 
 
 def wrap_tuple(x: Any) -> Tuple[Any, ...]:
@@ -35,6 +33,7 @@ class Function:
         result = cls.forward(ctx, *args)
         if any(arg.history is not None for arg in args):
             from .tensor import History
+
             result.history = History(cls, ctx, args)
         return result
 
@@ -161,6 +160,7 @@ class All(Function):
     def forward(ctx: Context, a: Tensor, dim: Optional[int] = None) -> Tensor:
         if dim is not None:
             from .operators import prod
+
             return (
                 a.permute(*[i for i in range(a.dims) if i != dim] + [dim])
                 .contiguous()
@@ -282,6 +282,7 @@ def zeros(shape: UserShape, backend: TensorBackend = SimpleBackend) -> Tensor:
 
     """
     from .operators import prod
+
     return Tensor.make([0.0] * int(prod(shape)), shape, backend=backend)
 
 
@@ -304,6 +305,7 @@ def rand(
 
     """
     from .operators import prod
+
     vals = [random.random() for _ in range(int(prod(shape)))]
     tensor = Tensor.make(vals, shape, backend=backend)
     if requires_grad:
