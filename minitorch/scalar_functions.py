@@ -220,3 +220,132 @@ class EQ(ScalarFunction):
     def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
         """Backward pass for equality."""
         return 0.0, 0.0
+class ScalarFunction:
+    """
+    A wrapper for a mathematical function that processes and produces
+    Scalar variables.
+
+    This is a static class and is never instantiated. We use `class`
+    here to group together the `forward` and `backward` code.
+    """
+
+    @classmethod
+    def _backward(cls, ctx: Context, d_out: float) -> Tuple[float, ...]:
+        return cls.backward(ctx, d_out)  # type: ignore
+
+    @classmethod
+    def _forward(cls, ctx: Context, *inps: float) -> float:
+        return cls.forward(ctx, *inps)  # type: ignore
+
+    @classmethod
+    def apply(cls, *vals: "ScalarLike") -> "Scalar":
+        raw_vals = []
+        scalars = []
+        for v in vals:
+            if isinstance(v, Scalar):
+                scalars.append(v)
+                raw_vals.append(v.data)
+            else:
+                scalars.append(Scalar(v))
+                raw_vals.append(v)
+
+        # Create the context.
+        ctx = Context(False)
+
+        # Call forward with the variables.
+        c = cls._forward(ctx, *raw_vals)
+        assert isinstance(c, float), "Expected return type float got %s" % (type(c))
+
+        # Create a new variable from the result with a new history.
+        back = ctx.saved_values
+
+        return Scalar(c, History(cls, ctx, scalars, back))
+
+class Add(ScalarFunction):
+    "Addition function $f(x, y) = x + y$"
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        return a + b
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, ...]:
+        return d_output, d_output
+
+
+class Mul(ScalarFunction):
+    "Multiplication function $f(x, y) = x * y$"
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        # TODO: Implement for Task 1.2.
+        ctx.save_for_backward(a, b)
+        return operators.mul(a, b)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, ...]:
+        # TODO: Implement for Task 1.4.
+        a, b = ctx.saved_values
+        return d_output * b, d_output * a
+
+
+class Neg(ScalarFunction):
+    "Negation function $f(x) = -x$"
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        # TODO: Implement for Task 1.2.
+        return operators.neg(a)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, ...]:
+        # TODO: Implement for Task 1.4.
+        return (operators.neg(d_output),)
+
+
+class Inv(ScalarFunction):
+    "Inverse function $f(x) = 1/x$"
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        # TODO: Implement for Task 1.2.
+        ctx.save_for_backward(a)
+        return operators.inv(a)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, ...]:
+        # TODO: Implement for Task 1.4.
+        (a,) = ctx.saved_values
+        return (operators.neg(operators.inv(operators.mul(a, a)) * d_output),)
+
+
+class LT(ScalarFunction):
+    "Less-than function $f(x) =$ 1.0 if x is less than y else 0.0"
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        # TODO: Implement for Task 1.2.
+        return operators.lt(a, b)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, ...]:
+        # TODO: Implement for Task 1.4.
+        return 0.0, 0.0
+
+
+class EQ(ScalarFunction):
+    "Equal function $f(x) =$ 1.0 if x is equal to y else 0.0"
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        # TODO: Implement for Task 1.2.
+        return operators.eq(a, b)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, ...]:
+        # TODO: Implement for Task 1.4.
+        return 0.0, 0.0
+
+def derivative_check(f: Callable[[Scalar], Scalar], *scalars: Scalar) -> None:
+    # TODO: Implement for Task 1.5.
+    raise NotImplementedError("Implement for Task 1.5")
