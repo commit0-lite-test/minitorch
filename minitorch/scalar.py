@@ -2,7 +2,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional, Sequence, Type, Union, Protocol
 from .autodiff import Context, backpropagate, central_difference
-from .scalar_functions import EQ, LT, Add, Inv, Mul, Neg, ScalarFunction
+
+# Forward declarations
+ScalarFunction: Any
 
 ScalarLike = Union[float, int, "Scalar"]
 

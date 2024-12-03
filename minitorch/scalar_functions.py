@@ -2,7 +2,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Tuple, Union
 from . import operators
 from .autodiff import Context
-from .scalar import Scalar, ScalarLike
+
+if TYPE_CHECKING:
+    from .scalar import Scalar, ScalarLike
 
 if TYPE_CHECKING:
     from .scalar import ScalarHistory
